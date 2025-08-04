@@ -1,0 +1,45 @@
+pipeline{
+    agent any
+    stages{
+        stage("Code Checkout"){
+            steps{
+            git url: "https://github.com/mdasad51/node.js-todo-app.git",branch:"main"
+             echo "Code checkout successfully"   
+            }
+        }
+        stage("Install Dependencies"){
+            steps{
+                sh "npm install"
+            echo "Test  passes successfully"   
+            }
+        }
+         stage("Test"){
+            steps{
+                sh "npm test"
+                echo "Test  passes successfully"   
+            }
+        }
+         stage("Build"){
+            steps{
+             sh "docker build -t todo-app ."
+             echo "image build"   
+            }
+        }
+         stage("Image Push to Docker Hub"){
+            steps{
+            withCredentials([usernamePassword(credentialsId: "docker", passwordVariable: "dockerPass", usernameVariable: "dockerUser")]) {
+                    sh "docker login -u ${env.dockerUser} -p ${env.dockerPass}"
+                    sh "docker tag todo-app:latest ${env.dockerUser}/todo-app:latest"
+                    sh "docker push ${env.dockerUser}/todo-app:latest"
+                }
+                echo "image Push to docker hub"  
+            }
+        }
+         stage("App Deploy"){
+            steps{
+            sh "docker-compose down && docker-compose up -d"
+             echo "App is Deployed"   
+            }
+        }
+    }
+}
